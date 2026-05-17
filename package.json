@@ -1,11 +1,15 @@
 {
-  "name": "huitian-daily",
+  "name": "Huitian-daily",
   "version": "1.0.0",
   "description": "Yunzai 版回天日报：60s 读世界 / Bangumi 番剧 / 摸鱼日历 / 历史上的今天 / Epic 免费游戏 / 油价",
   "main": "index.js",
   "type": "module",
   "license": "MIT",
+  "author": "OriginSXC",
   "dependencies": {
-    "cheerio": "*"
+    "cheerio": "^1.0.0",
+    "node-fetch": "^3.3.2",
+    "yaml": "^2.9.0",
+    "lodash": "^4.17.21"
   }
 }
