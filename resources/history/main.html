@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <base href="{{_base}}" />
+    <title>历史上的今天</title>
+    <link rel="stylesheet" href="main.css" />
+  </head>
+  <body>
+    <div class="page" id="container">
+      <div class="header">
+        <div class="date-block">
+          <div class="date-big">{{month}} / {{day}}</div>
+          <div class="weekday">星期{{weekday_cn}}</div>
+        </div>
+        <div class="title">历史上的今天</div>
+      </div>
+      <div class="divider"></div>
+
+      <div class="timeline">
+        {{each items it}}
+        <div class="row">
+          <div class="rail">
+            <div class="dot" style="background: {{it._color}}"></div>
+          </div>
+          <div class="card" style="border-left: 4px solid {{it._color}}">
+            <div class="card-head">
+              <div class="year" style="color: {{it._color}}">{{it.year}}</div>
+              <div class="badge" style="background: {{it._color}}">{{it._emoji}} {{it._label}}</div>
+            </div>
+            <div class="card-title">{{it.title}}</div>
+            <div class="card-desc">{{it.description}}</div>
+          </div>
+        </div>
+        {{/each}}
+      </div>
+    </div>
+  </body>
+</html>

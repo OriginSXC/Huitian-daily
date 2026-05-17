@@ -1,0 +1,265 @@
+/* 回天日报 —— 基于源 huannai_report 改风格：派蒙星空蓝紫 + 暖纸；圆角放大；柔阴影 */
+
+body { margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
+
+@font-face {
+  font-family: "Noto Sans SC B";
+  src: url("./res/font/NotoSansSC-Bold.otf") format("opentype");
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Noto Sans SC";
+  src: url("./res/font/NotoSansSC-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "SSFangTangTi";
+  src: url("./res/font/SSFangTangTi.ttf");
+}
+
+:root {
+  --accent: #5b6ec9;
+  --accent-soft: #8b97e0;
+  --accent-bg: #eef0fb;
+  --paper: #fcf8f0;
+  --paper-sub: #fffaf2;
+  --wrapper-bg: #c8b88c;
+  --ink: #2b2c3a;
+  --sub: #5a6270;
+  --shadow: 0 4px 12px rgba(91, 110, 201, 0.18);
+}
+
+.wrapper { width: 578px; background-color: var(--wrapper-bg); position: relative; padding: 15px; border-radius: 16px; box-sizing: content-box; }
+.main    { width: 578px; background-color: var(--paper); position: relative; border-radius: 14px; padding: 14px; box-sizing: border-box; }
+
+/* ============ 顶部 ============ */
+.top-border { display: flex; align-items: stretch; gap: 12px; }
+
+.mascot-wrap {
+  width: 130px;
+  height: 150px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--accent-bg);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.mascot-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 22%;     /* 把派蒙脸/上半身对到框中央 */
+  image-rendering: -webkit-optimize-contrast;
+}
+
+.top-title {
+  position: relative;
+  flex: 1;
+  height: 150px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-left: 4px;
+}
+.huitian-title {
+  font-family: "SSFangTangTi", "Noto Sans SC B", serif;
+  color: var(--accent);
+  font-size: 64px;
+  margin: 0;
+  letter-spacing: 3px;
+  line-height: 1;
+}
+.huitian-tip {
+  color: var(--accent-soft);
+  font-family: "Noto Sans SC B";
+  text-shadow: 1px 1px 0 #cdd3f3;
+  font-size: 22px;
+  font-weight: 700;
+  margin: 8px 0 0 2px;
+  letter-spacing: 2px;
+}
+
+.top-date {
+  background-color: var(--accent-bg);
+  border-radius: 14px;
+  width: 110px;
+  height: 150px;
+  position: relative;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 12px 0;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+.top-date-week {
+  color: var(--accent);
+  font-size: 38px;
+  font-family: "Noto Sans SC B";
+  margin: 0 0 6px 0;
+  line-height: 1;
+  text-align: center;
+  width: 100%;
+}
+.top-date-date {
+  color: white;
+  font-family: "Noto Sans SC B";
+  font-size: 13px;
+  background-color: var(--accent);
+  height: 24px;
+  width: calc(100% - 16px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  margin: 4px 0;
+  letter-spacing: 0.5px;
+}
+.top-date-cn {
+  font-family: "Noto Sans SC B";
+  color: var(--accent);
+  font-size: 14px;
+  margin: 4px 0 0 0;
+  text-align: center;
+  width: 100%;
+}
+
+/* ============ 摸鱼/B站 双栏 ============ */
+.one-border {
+  display: flex;
+  align-items: stretch;     /* 两栏自适应等高 */
+  margin-top: 30px;
+  font-family: "Noto Sans SC";
+  gap: 14px;
+}
+.moyu-border, .bili-border {
+  border-radius: 14px;
+  border: var(--accent-soft) 2px solid;
+  position: relative;
+  background: var(--paper-sub);
+  box-sizing: border-box;
+}
+.moyu-border { width: 38%; padding: 22px 14px 14px; }
+.bili-border { flex: 1;    padding: 22px 14px 14px 26px; font-size: 13px; }
+
+/* 浮于卡片顶部的胶囊标题 */
+.moyu-title {
+  border: var(--accent-soft) 2px solid;
+  position: absolute;
+  background-color: var(--paper);
+  border-radius: 999px;
+  color: var(--accent);
+  padding: 4px 12px;
+  font-size: 14px;
+  font-family: "Noto Sans SC B";
+  top: -18px;
+  left: 18px;
+  display: flex;
+  align-items: center;
+  z-index: 2;
+  white-space: nowrap;
+}
+.title-img { height: 14px; width: 14px; margin-right: 6px; }
+
+.moyu-inner {
+  display: flex;
+  align-items: center;
+  font-size: 12.5px;
+  color: var(--ink);
+  margin: 5px 0;
+  line-height: 1.4;
+  flex-wrap: wrap;
+}
+.moyu-day {
+  min-width: 30px;
+  text-align: center;
+  margin: 0 2px;
+  color: var(--accent);
+  font-weight: 600;
+}
+.moyu-day-name {
+  color: var(--accent);
+  background-color: var(--accent-bg);
+  padding: 1px 8px;
+  border-radius: 4px;
+  margin: 0 4px;
+  font-size: 12px;
+}
+
+.bili-text {
+  display: flex;
+  align-items: center;
+  margin: 6px 0;
+  line-height: 1.3;
+  color: var(--ink);
+}
+.bili-icon {
+  height: 16px;
+  width: auto;
+  margin-right: 6px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+/* ============ 番剧/60s/IT/一言 ============ */
+.two-border, .three-border, .four-border, .five-border {
+  border: var(--accent-soft) 2px solid;
+  border-radius: 14px;
+  position: relative;                  /* 不能有 overflow:hidden，会切掉悬浮标题 */
+  padding: 24px 18px 18px;             /* 上方留够空间，让胶囊标题不压到内容 */
+  font-family: "Noto Sans SC";
+  background-color: var(--paper-sub);
+  box-sizing: border-box;
+  width: 100%;                         /* 充满 .main 内容区 */
+  margin: 36px 0 0;
+}
+.three-border, .four-border { font-size: 14px; }
+.five-border {
+  font-size: 17px;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.two-border-border {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px 12px;
+}
+.anime-border {
+  font-size: 12.5px;
+  text-align: center;
+  line-height: 1.3;
+}
+.anime-text {
+  overflow: hidden;
+  margin: 6px 0 0;
+  height: 34px;
+  color: var(--ink);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.anime-img {
+  height: 142px;
+  width: 100%;
+  border-radius: 8px;
+  object-fit: cover;
+  display: block;
+}
+
+ul { list-style-position: outside; margin: 0; padding-left: 22px; }
+li { color: var(--ink); margin: 4px 0; line-height: 1.55; }
+.normal-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.full-show-text { line-height: 1.55; margin: 5px 0; }
+
+.hitokoto-text { margin: 6px 0 2px; line-height: 1.55; }

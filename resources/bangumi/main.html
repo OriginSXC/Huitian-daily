@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <base href="{{_base}}" />
+    <title>Bangumi 番剧日程</title>
+    <link rel="stylesheet" href="main.css" />
+  </head>
+  <body>
+    <div class="page" id="container">
+      <div class="header">
+        <div class="title-row">
+          <div class="title">
+            {{if mode === "today"}}Bangumi 每日放送{{else}}Bangumi 周放送{{/if}}
+          </div>
+          <div class="meta">
+            <div class="meta-date">{{today}}</div>
+            <div class="meta-saying">{{saying}}</div>
+          </div>
+        </div>
+      </div>
+
+      {{each days day}}
+      <div class="day-card {{if day.isToday}}today{{/if}}" style="border-color: {{day.color}}">
+        <div class="day-head">
+          <span class="dot" style="background: {{day.color}}"></span>
+          <span class="weekday">星期{{day.weekdayCn}}</span>
+          {{if day.isToday}}
+          <span class="badge" style="border-color: {{day.color}}; color: {{day.color}}">
+            TODAY / 今天
+          </span>
+          {{/if}}
+        </div>
+
+        {{if day.items.length}}
+        <div class="grid">
+          {{each day.items it}}
+          <div class="tile">
+            {{if it.image}}
+              <img class="cover" src="{{it.image}}" referrerpolicy="no-referrer" />
+            {{else}}
+              <div class="cover placeholder">NO<br/>COVER</div>
+            {{/if}}
+            <div class="tile-body">
+              <div class="tile-name" title="{{it.name}}">{{it.name}}</div>
+              <div class="tile-meta">
+                {{if it.score}}<span>评分 {{it.score}}{{if it.total}}（{{it.total}}）{{/if}}</span>{{/if}}
+                {{if it.doing}}<span>{{it.doing}} 人在看</span>{{/if}}
+              </div>
+              {{if it.airDate}}<div class="tile-air">放送 {{it.airDate}}</div>{{/if}}
+            </div>
+          </div>
+          {{/each}}
+        </div>
+        {{else}}
+        <div class="empty">（今天没有条目）</div>
+        {{/if}}
+      </div>
+      {{/each}}
+    </div>
+  </body>
+</html>

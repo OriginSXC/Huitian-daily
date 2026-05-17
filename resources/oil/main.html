@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <base href="{{_base}}" />
+    <title>今日油价</title>
+    <link rel="stylesheet" href="main.css" />
+  </head>
+  <body>
+    <div class="page" id="container">
+      <div class="header">
+        <div class="title">⛽ 今日油价</div>
+        <div class="updated">{{updated}}</div>
+      </div>
+      <div class="tip">{{tip}}</div>
+
+      <table>
+        <thead>
+          <tr>
+            {{each columns c}}
+              <th>{{c}}</th>
+            {{/each}}
+          </tr>
+        </thead>
+        <tbody>
+          {{each rows row}}
+            <tr>
+              {{each columns c}}
+                <td>{{row[c] || "—"}}</td>
+              {{/each}}
+            </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,14 @@
+# 用户配置（首次启动会从 default.yaml 自动生成）
+config/config.yaml
+
+# 渲染缓存（按天生成）
+resources/cache/
+
+# node_modules（依赖装在 Yunzai 主目录）
+node_modules/
+
+# 系统/编辑器
+.DS_Store
+*.log
+.vscode/
+.idea/

@@ -1,0 +1,63 @@
+:root {
+  --bg: #f8f9fc;
+  --card: #ffffff;
+  --border: #e1e4eb;
+  --ink: #19233a;
+  --sub: #5a6270;
+  --accent: #5b6ec9;
+  --head-bg: #eef0fb;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+.page {
+  width: 780px;
+  padding: 32px;
+}
+.header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.title { font-size: 32px; font-weight: 800; }
+.updated { color: var(--sub); font-size: 13px; }
+.tip {
+  background: var(--head-bg);
+  color: var(--accent);
+  padding: 10px 14px;
+  border-radius: 12px;
+  margin: 10px 0 18px;
+  font-size: 14px;
+}
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+th, td {
+  padding: 10px 14px;
+  font-size: 14px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+}
+th {
+  background: var(--head-bg);
+  color: var(--accent);
+  font-weight: 700;
+}
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:nth-child(odd) td { background: #fbfcff; }
+td:first-child, th:first-child {
+  text-align: left;
+  font-weight: 600;
+}

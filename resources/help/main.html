@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <base href="{{_base}}" />
+    <title>回天日报 · 帮助</title>
+    <link rel="stylesheet" href="main.css" />
+  </head>
+  <body>
+    <div class="page" id="container">
+      <div class="hero">
+        <img src="{{paimon_src}}" class="paimon" alt="paimon" />
+        <div class="hero-text">
+          <div class="title">回天日报</div>
+          <div class="subtitle">Huitian daily · v{{version}}</div>
+          <div class="hint">所有指令兼容 <code>#</code> 前缀（可选）</div>
+        </div>
+      </div>
+
+      {{each sections sec}}
+      <div class="section">
+        <div class="section-head">
+          <div class="section-icon" style="background: {{sec.color}}"></div>
+          <div class="section-title">{{sec.title}}</div>
+        </div>
+        <div class="cmd-list">
+          {{each sec.items it}}
+          <div class="cmd-row">
+            <div class="cmd-name">{{it.cmd}}</div>
+            <div class="cmd-desc">{{it.desc}}</div>
+          </div>
+          {{/each}}
+        </div>
+      </div>
+      {{/each}}
+
+      <div class="footer">
+        定时任务：{{schedule_lines.length}} 项｜
+        数据源：60s API · Bangumi · Hitokoto · B站 · IT之家｜
+        作者：{{author}}
+      </div>
+    </div>
+  </body>
+</html>

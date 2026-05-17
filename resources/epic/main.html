@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <base href="{{_base}}" />
+    <title>Epic 免费游戏</title>
+    <link rel="stylesheet" href="main.css" />
+  </head>
+  <body>
+    <div class="page" id="container">
+      <div class="header">
+        <div class="title">Epic 免费游戏速览</div>
+        <div class="date">{{today}}</div>
+      </div>
+      <div class="divider"></div>
+
+      {{each games g}}
+      <div class="card">
+        {{if g.cover}}
+          <img class="cover" src="{{g.cover}}" referrerpolicy="no-referrer" />
+        {{else}}
+          <div class="cover placeholder">NO<br/>COVER</div>
+        {{/if}}
+        <div class="info">
+          <div class="info-head">
+            <div class="game-title">{{g.title}}</div>
+            {{if g.is_free_now}}
+              <span class="tag tag-free">FREE NOW</span>
+            {{else}}
+              <span class="tag tag-upcoming">UPCOMING</span>
+            {{/if}}
+          </div>
+          <div class="meta">发行商：{{g.seller}}　·　原价：{{g.original_price_desc}}</div>
+          <div class="meta">免费时间：{{g.free_start}} → {{g.free_end}}</div>
+          <div class="desc">
+            {{each g._desc_lines line}}
+              <div>{{line}}</div>
+            {{/each}}
+          </div>
+        </div>
+      </div>
+      {{/each}}
+    </div>
+  </body>
+</html>

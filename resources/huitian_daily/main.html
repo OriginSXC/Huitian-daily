@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <base href="{{_base}}" />
+    <title>回天日报</title>
+    <link rel="stylesheet" href="main.css" />
+  </head>
+
+  <body>
+    <div class="wrapper" id="container">
+      <div class="main">
+        <div class="top-border">
+          <div class="mascot-wrap">
+            <img src="./res/image/paimon.jpg" alt="Paimon" class="mascot-img" />
+          </div>
+          <div class="top-title">
+            <p class="huitian-title">回天日报</p>
+            <p class="huitian-tip">Huitian daily</p>
+          </div>
+          <div class="top-date">
+            <p class="top-date-week">{{data.week}}</p>
+            <p class="top-date-date">{{data.date}}</p>
+            <p class="top-date-cn">{{data.zh_date}}</p>
+          </div>
+        </div>
+
+        <div class="one-border">
+          <div class="moyu-border">
+            <div class="moyu-title">
+              <img src="./res/icon/fish.png" class="title-img" />摸鱼日历
+            </div>
+            <p class="moyu-inner">{{data.current_holiday}}</p>
+            {{each data.data_festival fes}}
+            <p class="moyu-inner">
+              距离<span class="moyu-day-name">{{fes[0]}}</span>还剩<span class="moyu-day">{{fes[1]}}</span>天
+            </p>
+            {{/each}}
+            {{each data.next_holiday nh}}
+            <p class="moyu-inner">{{nh}}</p>
+            {{/each}}
+          </div>
+          <div class="bili-border">
+            <div class="moyu-title" style="left: 128px">
+              <img src="./res/icon/bilibili.png" class="title-img" />B站热点
+            </div>
+            {{each data.data_bili s}}
+            <p class="bili-text">
+              {{if s[1]}}<img src="{{s[1]}}" class="bili-icon" />{{/if}}{{s[0]}}
+            </p>
+            {{/each}}
+          </div>
+        </div>
+
+        <div class="two-border">
+          <div class="moyu-title" style="left: -3px">
+            <img src="./res/icon/bgm.png" class="title-img" />今日新番
+          </div>
+          <div class="two-border-border">
+            {{each data.data_anime s}}
+            <div class="anime-border">
+              {{if s[1]}}<img src="{{s[1]}}" class="anime-img" />{{/if}}
+              <p class="anime-text">{{s[0]}}</p>
+            </div>
+            {{/each}}
+          </div>
+        </div>
+
+        <div class="three-border">
+          <div class="moyu-title" style="left: -3px">
+            <img src="./res/icon/60.png" class="title-img" />60S读世界
+          </div>
+          <ul>
+            {{each data.data_six s}}
+              {{if data.full_show}}
+              <li class="full-show-text">{{s}}</li>
+              {{else}}
+              <li class="normal-text">{{s}}</li>
+              {{/if}}
+            {{/each}}
+          </ul>
+        </div>
+
+        <div class="four-border">
+          <div class="moyu-title" style="left: -3px">
+            <img src="./res/icon/it.png" class="title-img" />IT资讯
+          </div>
+          <ul>
+            {{each data.data_it s}}
+              {{if data.full_show}}
+              <li class="full-show-text">{{s}}</li>
+              {{else}}
+              <li class="normal-text">{{s}}</li>
+              {{/if}}
+            {{/each}}
+          </ul>
+        </div>
+
+        <div class="five-border">
+          <div class="moyu-title" style="left: -3px">
+            <img src="./res/icon/hitokoto.png" class="title-img" />今日一言
+          </div>
+          <p class="hitokoto-text">"{{data.data_hitokoto}}"</p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
