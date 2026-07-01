@@ -9,6 +9,9 @@
 ![node](https://img.shields.io/badge/node-%3E%3D18-brightgreen)
 [![stars](https://img.shields.io/github/stars/OriginSXC/Huitian-daily?style=flat)](https://github.com/OriginSXC/Huitian-daily/stargazers)
 [![issues](https://img.shields.io/github/issues/OriginSXC/Huitian-daily)](https://github.com/OriginSXC/Huitian-daily/issues)
+[![gitee](https://img.shields.io/badge/Gitee-%E9%95%9C%E5%83%8F-C71D23?logo=gitee)](https://gitee.com/OriginSXC/Huitian-daily)
+
+**GitHub**：<https://github.com/OriginSXC/Huitian-daily> ｜ **Gitee 镜像**：<https://gitee.com/OriginSXC/Huitian-daily>
 
 </div>
 
@@ -64,7 +67,11 @@
 在 **云崽根目录** 执行：
 
 ```bash
+# GitHub（海外推荐）
 git clone https://github.com/OriginSXC/Huitian-daily.git ./plugins/Huitian-daily
+
+# Gitee 镜像（国内推荐）
+git clone https://gitee.com/OriginSXC/Huitian-daily.git ./plugins/Huitian-daily
 ```
 
 ### 安装依赖
