@@ -54,7 +54,22 @@ export class HuitianPush extends plugin {
     try {
       const c = cfg("report")
       if (c.jitter > 0) await sleep(Math.random() * c.jitter * 1000)
-      const img = await getReportImage()
+
+      // 检测兜底：拉到缺模块（B站热点等）就等待后整体重生成，实在不行才发当前结果
+      const maxRetry = c.push_retry ?? 3
+      const retryDelay = c.push_retry_delay_ms ?? 60_000
+      let img, status
+      for (let i = 0; i <= maxRetry; i++) {
+        status = {}
+        img = await getReportImage({ status })
+        if (!status.missing?.length) break
+        if (i < maxRetry) {
+          logger.warn(`[Huitian-daily] 日报缺失模块[${status.missing.join("、")}]，${retryDelay / 1000}s 后第 ${i + 1} 次重试`)
+          await sleep(retryDelay)
+        } else {
+          logger.error(`[Huitian-daily] 日报重试 ${maxRetry} 次后仍缺失[${status.missing.join("、")}]，推送当前结果`)
+        }
+      }
       await broadcast(img, c.groupList || [], "回天日报")
     } catch (err) { logger.error(`[Huitian-daily] dailyReport: ${err.message}`) }
   }

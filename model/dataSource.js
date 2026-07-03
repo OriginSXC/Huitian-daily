@@ -1,5 +1,7 @@
+import fs from "node:fs"
 import { api } from "./api.js"
 import { render, cachePath } from "./render.js"
+import { get as cfg } from "./config.js"
 import {
   WeekDay, MoyuData, getZodiac, numToCn,
   MAIN_CHINA_CITIES, HistoryEventType,
@@ -20,6 +22,30 @@ function fmtDate(d = new Date()) {
 
 function safe(promise) {
   return promise.then(v => ({ ok: true, v })).catch(e => ({ ok: false, e }))
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
+
+/**
+ * 拉取并整形单个模块；拿不到可用数据时按配置重试（兜底）。
+ * @param label  日志名称
+ * @param fn     async，返回"整形后可用值"或 null（视为不可用，触发重试）
+ * @param retry  额外重试次数
+ * @param delay  每次重试前的等待毫秒
+ * @returns 可用值，或全部失败后返回 null
+ */
+async function fetchModule(label, fn, retry = 0, delay = 0) {
+  for (let i = 0; i <= retry; i++) {
+    try {
+      const v = await fn()
+      if (v != null) return v
+      logger.warn(`[Huitian-daily] ${label} 返回空数据${i < retry ? "，稍后重试" : ""}`)
+    } catch (e) {
+      logger.warn(`[Huitian-daily] ${label} 拉取失败: ${e.message}${i < retry ? "，稍后重试" : ""}`)
+    }
+    if (i < retry) await sleep(delay)
+  }
+  return null
 }
 
 function pickHitokotoText(j) {
@@ -205,9 +231,20 @@ export async function getWeekBangumi() {
 
 /* ---------------- 主日报 ---------------- */
 
-export async function getReportImage({ useCache = true } = {}) {
+export async function getReportImage({ useCache = true, status } = {}) {
   const now = new Date()
   const file = cachePath("huitian_daily", now)
+
+  // 命中当天完整缓存（只有全部模块成功才会写盘）直接返回，省去重复拉取
+  if (useCache && fs.existsSync(file)) {
+    if (status) status.missing = []
+    return segment.image(fs.readFileSync(file))
+  }
+
+  // 兜底重试参数：拉不到/拉空时对单模块重试
+  const rc = cfg("report")
+  const retry = rc.fetch_retry ?? 2
+  const delay = rc.fetch_retry_delay_ms ?? 3000
 
   // 摸鱼 API 在源代码里是同步等待的（不走 allSettled）；这里保持一致优先尝试
   let currentHoliday = ""
@@ -215,75 +252,77 @@ export async function getReportImage({ useCache = true } = {}) {
   let dataFestival = null
   let monthCn = `${numToCn(now.getMonth() + 1)}月`
   let dayCn   = `${numToCn(now.getDate())}日`
-  let moyuOk = false
-  try {
-    const moyu = await api.getMoyu()
-    const d = moyu?.data
-    if (d) {
-      monthCn = d.date.lunar.monthCN
-      dayCn   = d.date.lunar.dayCN
-      if (d.currentHoliday) {
-        currentHoliday = `【${d.currentHoliday.name}】假期进行中`
-      } else if (d.today.isWorkday) {
-        currentHoliday = d.today.isWeekend
-          ? "悲报: 今天周末要调休上班，但也要坚持摸鱼"
-          : "工作日：低调摸鱼，注意老板"
-      } else if (d.today.isWeekend) {
-        currentHoliday = "太好了！今天是周末，可以愉快摸鱼！"
-      } else if (d.today.isHoliday) {
-        currentHoliday = `节假日：${d.today.holidayName}，尽情摸鱼吧！`
-      }
-      dataFestival = [
-        ["周末", d.countdown.toWeekEnd],
-        ["周五", d.countdown.toFriday],
-        [d.nextHoliday.name, d.nextHoliday.until],
-      ]
-      nextHoliday = [
-        `下个带薪摸鱼日【${d.nextHoliday.name}】`,
-        `开始时间：${d.nextHoliday.date}`,
-        `可摸时长：${d.nextHoliday.duration}天`,
-        `是否调休：${
-          d.nextHoliday.workdays?.length ? d.nextHoliday.workdays.join("，") : "无需调休，爽"
-        }`,
-      ]
-      moyuOk = true
-    }
-  } catch (e) {
-    logger.warn(`[Huitian-daily] moyu fetch failed: ${e.message}`)
-  }
 
-  const [hito, bili, six, it, anime] = await Promise.all([
-    safe(api.getHitokoto()),
-    safe(api.getBili()),
-    safe(api.get60s()),
-    safe(api.getIT()),
-    safe(api.getAnime()),
+  const moyuD = await fetchModule("摸鱼日历", async () => {
+    const moyu = await api.getMoyu()
+    return moyu?.data ?? null
+  }, retry, delay)
+
+  if (moyuD) {
+    const d = moyuD
+    monthCn = d.date.lunar.monthCN
+    dayCn   = d.date.lunar.dayCN
+    if (d.currentHoliday) {
+      currentHoliday = `【${d.currentHoliday.name}】假期进行中`
+    } else if (d.today.isWorkday) {
+      currentHoliday = d.today.isWeekend
+        ? "悲报: 今天周末要调休上班，但也要坚持摸鱼"
+        : "工作日：低调摸鱼，注意老板"
+    } else if (d.today.isWeekend) {
+      currentHoliday = "太好了！今天是周末，可以愉快摸鱼！"
+    } else if (d.today.isHoliday) {
+      currentHoliday = `节假日：${d.today.holidayName}，尽情摸鱼吧！`
+    }
+    dataFestival = [
+      ["周末", d.countdown.toWeekEnd],
+      ["周五", d.countdown.toFriday],
+      [d.nextHoliday.name, d.nextHoliday.until],
+    ]
+    nextHoliday = [
+      `下个带薪摸鱼日【${d.nextHoliday.name}】`,
+      `开始时间：${d.nextHoliday.date}`,
+      `可摸时长：${d.nextHoliday.duration}天`,
+      `是否调休：${
+        d.nextHoliday.workdays?.length ? d.nextHoliday.workdays.join("，") : "无需调休，爽"
+      }`,
+    ]
+  }
+  const moyuOk = !!moyuD
+
+  // 各模块并发拉取，单模块失败/拉空自动重试（兜底核心）
+  const [hitokoto, biliShaped, sixShaped, itShaped, animeShaped] = await Promise.all([
+    fetchModule("一言", async () => pickHitokotoText(await api.getHitokoto()), retry, delay),
+    fetchModule("B站热点", async () => {
+      const v = await api.getBili()
+      return Array.isArray(v?.list) ? v.list.slice(0, 11).map(i => [i.show_name, i.icon]) : null
+    }, retry, delay),
+    fetchModule("60秒读世界", async () => {
+      const v = await api.get60s()
+      const news = v?.data?.news || []
+      return news.length ? news.slice(0, 11) : null
+    }, retry, delay),
+    fetchModule("IT资讯", async () => {
+      const v = await api.getIT()
+      return v?.length ? v : null
+    }, retry, delay),
+    fetchModule("动漫资讯", async () => {
+      const v = await api.getAnime()
+      if (!Array.isArray(v)) return null
+      const day = v[jsWeekday(now)]
+      if (!day?.items?.length) return null
+      return day.items.slice(0, 8).map(d => [d.name_cn || d.name, chooseAnimeImage(d)])
+    }, retry, delay),
   ])
 
-  const hitokoto = hito.ok ? pickHitokotoText(hito.v) : null
-
-  const biliShaped = bili.ok && Array.isArray(bili.v?.list)
-    ? bili.v.list.slice(0, 11).map(i => [i.show_name, i.icon])
-    : null
-
-  let sixShaped = null
-  if (six.ok) {
-    const news = six.v?.data?.news || []
-    sixShaped = news.slice(0, 11)
-  }
-
-  const itShaped = it.ok && it.v?.length ? it.v : null
-
-  let animeShaped = null
-  if (anime.ok && Array.isArray(anime.v)) {
-    const idx = jsWeekday(now)
-    const day = anime.v[idx]
-    if (day?.items?.length) {
-      animeShaped = day.items.slice(0, 8).map(d => [
-        d.name_cn || d.name, chooseAnimeImage(d),
-      ])
-    }
-  }
+  // 检测缺失模块，供推送层决定是否整体重生成
+  const missing = []
+  if (!moyuOk)      missing.push("摸鱼日历")
+  if (!hitokoto)    missing.push("一言")
+  if (!biliShaped)  missing.push("B站热点")
+  if (!sixShaped)   missing.push("60秒读世界")
+  if (!itShaped)    missing.push("IT资讯")
+  if (!animeShaped) missing.push("动漫资讯")
+  if (status) status.missing = missing
 
   const ctx = {
     data: {
@@ -302,7 +341,7 @@ export async function getReportImage({ useCache = true } = {}) {
     },
   }
 
-  const allOk = moyuOk && hitokoto && biliShaped && sixShaped && itShaped && animeShaped
+  const allOk = missing.length === 0
   return render("huitian_daily", ctx, {
     cacheFile: useCache && allOk ? file : undefined,
     pageGotoParams: { waitUntil: "networkidle0" },

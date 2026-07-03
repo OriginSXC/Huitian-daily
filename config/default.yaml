@@ -8,6 +8,12 @@ report:
   jitter: 50                   # 启动随机抖动秒数（对齐源 jitter=50），0 关闭
   isAutoPush: true
   groupList: []                # 推送目标群号，可在 config.yaml 填，例如 ['123456','654321']
+  # —— 拉取兜底：单模块（B站热点/60s/IT/动漫/摸鱼）拉失败或拉空时重试 ——
+  fetch_retry: 2               # 单模块额外重试次数，0 关闭
+  fetch_retry_delay_ms: 3000   # 单模块每次重试前等待毫秒
+  # —— 定时推送兜底：整张日报仍缺模块时，等待后整体重生成再发 ——
+  push_retry: 3                # 定时推送时最多重生成轮数，0 关闭（缺模块也直接发）
+  push_retry_delay_ms: 60000   # 每轮重生成前等待毫秒（给上游恢复时间）
 
 # 摸鱼日历推送
 moyu:
