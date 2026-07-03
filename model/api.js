@@ -46,6 +46,33 @@ async function getText(url, opts = {}) {
 }
 
 export const api = {
+  /**
+   * 抓取远程图片并转成 base64 data URI，失败/超时返回空串。
+   * 渲染前用它把外链图内联进模板，避免 Chromium 穿代理实时加载外链图
+   * 导致 networkidle 一直不触发、goto 超时（整张日报作废）。
+   * 非 http(s) 值原样返回（本地路径/已是 data URI 时不动它）。
+   */
+  async fetchImageDataURI(url, timeout) {
+    if (typeof url !== "string" || !/^https?:\/\//i.test(url)) {
+      return typeof url === "string" ? url : ""
+    }
+    const ctl = new AbortController()
+    const timer = setTimeout(() => ctl.abort(), timeout ?? apiCfg().image_timeout_ms ?? 8_000)
+    try {
+      const res = await fetch(url, {
+        signal: ctl.signal,
+        headers: { "User-Agent": UA, Referer: "https://www.bilibili.com/" },
+      })
+      if (!res.ok) return ""
+      const ct = (res.headers.get("content-type") || "image/png").split(";")[0].trim()
+      const buf = Buffer.from(await res.arrayBuffer())
+      return `data:${ct};base64,${buf.toString("base64")}`
+    } catch {
+      return ""
+    } finally {
+      clearTimeout(timer)
+    }
+  },
   /** 60s 读世界 */
   async get60s()         { return getJson(SixAPI().today60s) },
   /** 摸鱼日历元数据（节假日/进度等） */

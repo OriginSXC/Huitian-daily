@@ -27,6 +27,22 @@ function safe(promise) {
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
 
 /**
+ * 把 tuple 列表里某一列的外链图并行预抓成 data URI（失败→空串），
+ * 让模板只加载本地资源，规避 Chromium 冷启动穿代理实时拉图导致的 networkidle 超时。
+ * @param list  形如 [[name, url], ...]；非数组原样返回
+ * @param idx   url 所在下标
+ */
+async function inlineTupleImages(list, idx) {
+  if (!Array.isArray(list)) return list
+  return Promise.all(list.map(async t => {
+    if (!Array.isArray(t)) return t
+    const copy = [...t]
+    copy[idx] = await api.fetchImageDataURI(copy[idx])
+    return copy
+  }))
+}
+
+/**
  * 拉取并整形单个模块；拿不到可用数据时按配置重试（兜底）。
  * @param label  日志名称
  * @param fn     async，返回"整形后可用值"或 null（视为不可用，触发重试）
@@ -78,8 +94,13 @@ export async function getMoyuImage() {
   const now = new Date()
   const file = cachePath("moyu", now)
   const fishIndex = Math.floor(Math.random() * 100) + 1
+  // 外链图预抓内联，规避 Chromium 冷启动穿代理拉图导致的 networkidle 超时
+  const [topGifUrl, fishImgUrl] = await Promise.all([
+    api.fetchImageDataURI(MoyuData.topGifUrl),
+    api.fetchImageDataURI(MoyuData.randomFishImg()),
+  ])
   const ctx = {
-    top_gif_url: MoyuData.topGifUrl,
+    top_gif_url: topGifUrl,
     year_month_text: `${now.getFullYear()}年${now.getMonth() + 1}月`,
     week_text: `星期${WeekDay.nameCn(jsWeekday(now))}`,
     day_num: now.getDate(),
@@ -92,7 +113,7 @@ export async function getMoyuImage() {
     fish_level_text: MoyuData.moyuLevel(fishIndex),
     zodiac: getZodiac(now.getMonth() + 1, now.getDate()),
     zodiac_quote: MoyuData.randomZodiacQuote(),
-    fish_img_url: MoyuData.randomFishImg(),
+    fish_img_url: fishImgUrl,
     salary_lines: MoyuData.salaryLines(now),
     footer_quote: await getHitokotoText(),
   }
@@ -201,17 +222,28 @@ function shapeWeekday(day, idx, todayIdx) {
   }
 }
 
+/** 把 days 里每个番剧封面的外链图并行预抓内联（失败→空串） */
+async function inlineBangumiImages(days) {
+  await Promise.all(
+    days.flatMap(d => d.items).map(async it => {
+      it.image = await api.fetchImageDataURI(it.image)
+    })
+  )
+  return days
+}
+
 export async function getTodayBangumi() {
   const schedule = await api.getAnime()
   const todayIdx = jsWeekday(new Date())
   const day = schedule[todayIdx]
   if (!day) throw new Error("bgm.tv 返回数据格式异常")
   const saying = await getHitokotoText()
+  const days = await inlineBangumiImages([shapeWeekday(day, todayIdx, todayIdx)])
   return render("bangumi", {
     mode: "today",
     saying,
     today: fmtDate(),
-    days: [shapeWeekday(day, todayIdx, todayIdx)],
+    days,
   })
 }
 
@@ -219,7 +251,7 @@ export async function getWeekBangumi() {
   const schedule = await api.getAnime()
   const todayIdx = jsWeekday(new Date())
   // schedule 是按周一→周日返回 7 条；保持源顺序
-  const days = schedule.map((d, i) => shapeWeekday(d, i, todayIdx))
+  const days = await inlineBangumiImages(schedule.map((d, i) => shapeWeekday(d, i, todayIdx)))
   const saying = await getHitokotoText()
   return render("bangumi", {
     mode: "week",
@@ -324,16 +356,22 @@ export async function getReportImage({ useCache = true, status } = {}) {
   if (!animeShaped) missing.push("动漫资讯")
   if (status) status.missing = missing
 
+  // 外链图（B站图标 / 番剧封面）预抓内联，避免渲染时穿代理实时加载拖垮页面
+  const [biliInlined, animeInlined] = await Promise.all([
+    inlineTupleImages(biliShaped, 1),
+    inlineTupleImages(animeShaped, 1),
+  ])
+
   const ctx = {
     data: {
       current_holiday: currentHoliday,
       next_holiday: nextHoliday,
       data_festival: dataFestival || FAIL.fest,
       data_hitokoto: hitokoto || FAIL.hitokoto,
-      data_bili:    biliShaped  || FAIL.bili,
-      data_six:     sixShaped   || FAIL.six,
-      data_anime:   animeShaped || FAIL.anime,
-      data_it:      itShaped    || FAIL.it,
+      data_bili:    biliInlined  || FAIL.bili,
+      data_six:     sixShaped    || FAIL.six,
+      data_anime:   animeInlined || FAIL.anime,
+      data_it:      itShaped     || FAIL.it,
       week: WeekDay.nameCn(jsWeekday(now)),
       date: fmtDate(now),
       zh_date: `${monthCn}${dayCn}`,
