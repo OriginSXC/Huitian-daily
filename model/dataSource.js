@@ -98,7 +98,7 @@ export async function getMoyuImage() {
   }
   return render("moyu", ctx, {
     cacheFile: file,
-    pageGotoParams: { waitUntil: "networkidle0" },
+    pageGotoParams: { waitUntil: "networkidle2", timeout: 30000 },
   })
 }
 
@@ -344,6 +344,6 @@ export async function getReportImage({ useCache = true, status } = {}) {
   const allOk = missing.length === 0
   return render("huitian_daily", ctx, {
     cacheFile: useCache && allOk ? file : undefined,
-    pageGotoParams: { waitUntil: "networkidle0" },
+    pageGotoParams: { waitUntil: "networkidle2", timeout: 30000 },
   })
 }
