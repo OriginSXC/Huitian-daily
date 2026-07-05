@@ -25,6 +25,15 @@ function SixAPI() {
   }
 }
 
+// AniList 兜底用：airingAt 是绝对秒级时间戳，统一按 CST(UTC+8) 折算“放送在星期几/哪天”
+const CST_OFFSET = 8 * 3600
+function cstParts(sec) {
+  const d = new Date((sec + CST_OFFSET) * 1000)
+  return { y: d.getUTCFullYear(), m: d.getUTCMonth() + 1, d: d.getUTCDate(), w: d.getUTCDay() }
+}
+function weekdayMon0(sec) { const w = cstParts(sec).w; return w === 0 ? 6 : w - 1 } // 周一=0..周日=6
+function ymdFromSec(sec) { const p = cstParts(sec); return `${p.y}-${String(p.m).padStart(2, "0")}-${String(p.d).padStart(2, "0")}` }
+
 async function getJson(url, opts = {}) {
   const ctl = new AbortController()
   const timer = setTimeout(() => ctl.abort(), opts.timeout ?? apiCfg().timeout_ms ?? 15_000)
@@ -133,5 +142,79 @@ export const api = {
   /** Bangumi 番剧日程（bgm.tv 用合规应用 UA，浏览器 UA 会被禁；今日 502 是其源站故障非 UA 问题） */
   async getAnime() {
     return getJson(OtherApi.anime, { headers: { "User-Agent": BGM_UA } })
+  },
+
+  /**
+   * AniList 番剧兜底：拉本周放送，整形成与 bgm calendar 同构的 7 元素数组（周一=0..周日=6），
+   * 每个元素 { items: [{ name_cn, name, images, rating, collection, air_date }] }，
+   * 让下游 shapeAnimeItem / 日报动漫模块无需改动即可复用。
+   * bgm 不同的是：AniList 无“在看人数”，评分为 0-100（这里折算 0-10），中文名仅国产番有（日番为日文原名）。
+   */
+  async getAnimeAniList() {
+    const query = `query ($page:Int,$start:Int,$end:Int){
+      Page(page:$page, perPage:50){
+        pageInfo{ hasNextPage }
+        airingSchedules(airingAt_greater:$start, airingAt_lesser:$end, sort:TIME){
+          airingAt
+          media{ title{ native romaji english } coverImage{ large medium } averageScore format }
+        }
+      }
+    }`
+    const nowSec = Math.floor(Date.now() / 1000)
+    // 以 CST 今天 00:00 为起点，覆盖未来 7 天（含今天）
+    const start = Math.floor((nowSec + CST_OFFSET) / 86400) * 86400 - CST_OFFSET
+    const end = start + 7 * 86400
+    const week = Array.from({ length: 7 }, () => ({ items: [] }))
+    const seen = new Set()
+    for (let page = 1; page <= 6; page++) {
+      const j = await getJson(OtherApi.anilist, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json", "User-Agent": BGM_UA },
+        body: JSON.stringify({ query, variables: { page, start, end } }),
+      })
+      const arr = j?.data?.Page?.airingSchedules || []
+      for (const a of arr) {
+        const m = a.media || {}
+        if (m.format === "MUSIC") continue
+        const name = m.title?.native || m.title?.romaji || m.title?.english || ""
+        if (!name) continue
+        const wd = weekdayMon0(a.airingAt)
+        const key = `${wd}|${name}`
+        if (seen.has(key)) continue // 同一番同一天去重（补番/多集）
+        seen.add(key)
+        week[wd].items.push({
+          name_cn: null,
+          name,
+          images: { common: m.coverImage?.large || m.coverImage?.medium || "" },
+          rating: { score: m.averageScore ? m.averageScore / 10 : null, total: null },
+          collection: { doing: null },
+          air_date: ymdFromSec(a.airingAt),
+        })
+      }
+      if (!j?.data?.Page?.pageInfo?.hasNextPage) break
+    }
+    return week
+  },
+
+  /**
+   * 番剧日程（带兜底）：bgm 官方 → AniList → null。
+   * @returns { schedule: 7元素数组|null, source: "bgm"|"anilist"|null }
+   */
+  async getAnimeSchedule() {
+    try {
+      const v = await this.getAnime()
+      if (Array.isArray(v) && v.length) return { schedule: v, source: "bgm" }
+      logger.warn("[Huitian-daily] bgm 番剧返回空，转 AniList 兜底")
+    } catch (e) {
+      logger.warn(`[Huitian-daily] bgm 番剧失败(${e.message})，转 AniList 兜底`)
+    }
+    try {
+      const v = await this.getAnimeAniList()
+      if (Array.isArray(v) && v.some(d => d.items.length)) return { schedule: v, source: "anilist" }
+      logger.warn("[Huitian-daily] AniList 兜底返回空")
+    } catch (e) {
+      logger.warn(`[Huitian-daily] AniList 兜底也失败: ${e.message}`)
+    }
+    return { schedule: null, source: null }
   },
 }

@@ -14,6 +14,7 @@ export const OtherApi = {
   biliHot:  "https://s.search.bilibili.com/main/hotword",
   it:       "https://www.ithome.com/rss/",
   anime:    "https://api.bgm.tv/calendar",
+  anilist:  "https://graphql.anilist.co",   // bgm 源站宕机时的番剧兜底（独立于 bgm）
 }
 
 export const WeekDay = {

@@ -232,25 +232,19 @@ async function inlineBangumiImages(days) {
   return days
 }
 
-/** 拉番剧日程；bgm.tv 常被墙/502，失败/格式异常一律回退 null（交给上层降级） */
-async function safeAnime() {
-  try {
-    const v = await api.getAnime()
-    return Array.isArray(v) ? v : null
-  } catch (e) {
-    logger.warn(`[Huitian-daily] 番剧日程拉取失败: ${e.message}`)
-    return null
-  }
-}
-
-/** 造一个没有条目的占位日卡，让 bgm.tv 挂掉时番剧推送仍能出图（对齐日报“降级不判死”） */
+/** 造一个没有条目的占位日卡，让番剧源全挂时推送仍能出图（对齐日报“降级不判死”） */
 function emptyDay(idx, todayIdx) {
   return { weekdayCn: WeekDay.nameCn(idx), color: WeekDay.color(idx), isToday: idx === todayIdx, items: [] }
 }
 
+/** 兜底数据来源提示：走 AniList 时在卡片上标注，bgm 官方则不提示 */
+function sourceNote(source) {
+  return source === "anilist" ? "数据来自 AniList 兜底（bgm.tv 暂不可用，日番为日文原名、无在看人数）" : ""
+}
+
 export async function getTodayBangumi() {
   const todayIdx = jsWeekday(new Date())
-  const schedule = await safeAnime()
+  const { schedule, source } = await api.getAnimeSchedule()
   const day = schedule?.[todayIdx]
   const dataFail = !day
   const saying = await getHitokotoText()
@@ -263,12 +257,13 @@ export async function getTodayBangumi() {
     today: fmtDate(),
     days,
     dataFail,
+    note: sourceNote(source),
   })
 }
 
 export async function getWeekBangumi() {
   const todayIdx = jsWeekday(new Date())
-  const schedule = await safeAnime()
+  const { schedule, source } = await api.getAnimeSchedule()
   const dataFail = !schedule
   // schedule 是按周一→周日返回 7 条；保持源顺序
   const days = dataFail
@@ -281,6 +276,7 @@ export async function getWeekBangumi() {
     today: fmtDate(),
     days,
     dataFail,
+    note: sourceNote(source),
   })
 }
 
@@ -361,9 +357,9 @@ export async function getReportImage({ useCache = true, status } = {}) {
       return v?.length ? v : null
     }, retry, delay),
     fetchModule("动漫资讯", async () => {
-      const v = await api.getAnime()
-      if (!Array.isArray(v)) return null
-      const day = v[jsWeekday(now)]
+      const { schedule } = await api.getAnimeSchedule()  // bgm 官方 → AniList 兜底
+      if (!Array.isArray(schedule)) return null
+      const day = schedule[jsWeekday(now)]
       if (!day?.items?.length) return null
       return day.items.slice(0, 8).map(d => [d.name_cn || d.name, chooseAnimeImage(d)])
     }, retry, delay),
