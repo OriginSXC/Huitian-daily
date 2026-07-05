@@ -6,6 +6,10 @@ const UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
   "(KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
 
+// bgm.tv 要求非浏览器客户端用「应用名/版本 (项目主页)」标识 UA，并会封禁浏览器/请求库默认 UA。
+// https://github.com/bangumi/api 见 README 的 User-Agent 约定。
+const BGM_UA = "OriginSXC/Huitian-daily/1.0.0 (https://github.com/OriginSXC/Huitian-daily)"
+
 function apiCfg() { return cfg("api") }
 
 /** 按用户配置的 six_base 覆盖默认端点；缺省回退到内置 60s.viki.moe */
@@ -126,8 +130,8 @@ export const api = {
     }
     return titles.slice(0, 11)
   },
-  /** Bangumi 番剧日程 */
+  /** Bangumi 番剧日程（bgm.tv 用合规应用 UA，浏览器 UA 会被禁；今日 502 是其源站故障非 UA 问题） */
   async getAnime() {
-    return getJson(OtherApi.anime, { headers: { "User-Agent": UA } })
+    return getJson(OtherApi.anime, { headers: { "User-Agent": BGM_UA } })
   },
 }

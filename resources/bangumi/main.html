@@ -53,7 +53,11 @@
           {{/each}}
         </div>
         {{else}}
+        {{if dataFail}}
+        <div class="empty">获取动漫资讯失败 QAQ（上游 bgm.tv 暂时不可用）</div>
+        {{else}}
         <div class="empty">（今天没有条目）</div>
+        {{/if}}
         {{/if}}
       </div>
       {{/each}}

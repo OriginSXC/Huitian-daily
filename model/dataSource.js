@@ -232,32 +232,55 @@ async function inlineBangumiImages(days) {
   return days
 }
 
+/** 拉番剧日程；bgm.tv 常被墙/502，失败/格式异常一律回退 null（交给上层降级） */
+async function safeAnime() {
+  try {
+    const v = await api.getAnime()
+    return Array.isArray(v) ? v : null
+  } catch (e) {
+    logger.warn(`[Huitian-daily] 番剧日程拉取失败: ${e.message}`)
+    return null
+  }
+}
+
+/** 造一个没有条目的占位日卡，让 bgm.tv 挂掉时番剧推送仍能出图（对齐日报“降级不判死”） */
+function emptyDay(idx, todayIdx) {
+  return { weekdayCn: WeekDay.nameCn(idx), color: WeekDay.color(idx), isToday: idx === todayIdx, items: [] }
+}
+
 export async function getTodayBangumi() {
-  const schedule = await api.getAnime()
   const todayIdx = jsWeekday(new Date())
-  const day = schedule[todayIdx]
-  if (!day) throw new Error("bgm.tv 返回数据格式异常")
+  const schedule = await safeAnime()
+  const day = schedule?.[todayIdx]
+  const dataFail = !day
   const saying = await getHitokotoText()
-  const days = await inlineBangumiImages([shapeWeekday(day, todayIdx, todayIdx)])
+  const days = dataFail
+    ? [emptyDay(todayIdx, todayIdx)]
+    : await inlineBangumiImages([shapeWeekday(day, todayIdx, todayIdx)])
   return render("bangumi", {
     mode: "today",
     saying,
     today: fmtDate(),
     days,
+    dataFail,
   })
 }
 
 export async function getWeekBangumi() {
-  const schedule = await api.getAnime()
   const todayIdx = jsWeekday(new Date())
+  const schedule = await safeAnime()
+  const dataFail = !schedule
   // schedule 是按周一→周日返回 7 条；保持源顺序
-  const days = await inlineBangumiImages(schedule.map((d, i) => shapeWeekday(d, i, todayIdx)))
+  const days = dataFail
+    ? Array.from({ length: 7 }, (_, i) => emptyDay(i, todayIdx))
+    : await inlineBangumiImages(schedule.map((d, i) => shapeWeekday(d, i, todayIdx)))
   const saying = await getHitokotoText()
   return render("bangumi", {
     mode: "week",
     saying,
     today: fmtDate(),
     days,
+    dataFail,
   })
 }
 
