@@ -327,9 +327,10 @@ export async function getReportImage({ useCache = true, status } = {}) {
     dataFestival = [
       ["周末", d.countdown.toWeekEnd],
       ["周五", d.countdown.toFriday],
-      [d.nextHoliday.name, d.nextHoliday.until],
     ]
-    nextHoliday = [
+    // 上游在新一年节假日未公布时 nextHoliday 为 null
+    if (d.nextHoliday) dataFestival.push([d.nextHoliday.name, d.nextHoliday.until])
+    if (d.nextHoliday) nextHoliday = [
       `下个带薪摸鱼日【${d.nextHoliday.name}】`,
       `开始时间：${d.nextHoliday.date}`,
       `可摸时长：${d.nextHoliday.duration}天`,
