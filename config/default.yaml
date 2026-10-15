@@ -37,7 +37,7 @@ cleanup:
 
 # 外部 API
 api:
-  six_base: 'https://60s.viki.moe'  # 60s 主接口；如域名不可用换公共实例
+  six_base: 'https://60s.crystelf.top'  # 60s 主接口；viki.moe 被 CF 挑战拦截(403)，默认改用公共实例
   alapi_token: ''                   # 预留：ALAPI 早报 token（目前未使用）
   timeout_ms: 15000
   image_timeout_ms: 8000            # 渲染前预抓外链图转 data URI 的单张超时，超时则丢弃该图

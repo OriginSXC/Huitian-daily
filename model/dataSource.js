@@ -1,4 +1,5 @@
 import fs from "node:fs"
+import fetch from "node-fetch"
 import { api } from "./api.js"
 import { render, cachePath } from "./render.js"
 import { get as cfg } from "./config.js"
@@ -83,10 +84,46 @@ export async function getHitokotoText() {
   }
 }
 
+/** 60s-static-host 按日期命名的静态图镜像，不依赖 API（API 被 CF 拦截时兜底） */
+function static60sUrls(date) {
+  const f = `static/images/${date}.png`
+  return [
+    `https://raw.githubusercontent.com/vikiboss/60s-static-host/main/${f}`,
+    `https://60s-static.viki.moe/images/${date}.png`,
+    `https://cdn.jsdmirror.com/gh/vikiboss/60s-static-host@main/${f}`,
+    `https://cdn.jsdelivr.net/gh/vikiboss/60s-static-host@main/${f}`,
+  ]
+}
+
+async function firstAliveUrl(urls, timeout = 5000) {
+  for (const u of urls) {
+    const ctl = new AbortController()
+    const timer = setTimeout(() => ctl.abort(), timeout)
+    try {
+      const res = await fetch(u, { method: "HEAD", signal: ctl.signal })
+      if (res.ok) return u
+      logger.warn(`[Huitian-daily] 60s 静态图镜像不可用 (${res.status}): ${u}`)
+    } catch (e) {
+      logger.warn(`[Huitian-daily] 60s 静态图镜像失败: ${u} - ${e.message}`)
+    } finally {
+      clearTimeout(timer)
+    }
+  }
+  return null
+}
+
 export async function get60sImage() {
-  const j = await api.get60s()
-  const url = j?.data?.image
-  if (!url) throw new Error("60s API 返回缺少 image 字段")
+  let date = ""
+  try {
+    const j = await api.get60s()
+    if (j?.data?.image) return segment.image(j.data.image)
+    date = j?.data?.date || ""
+  } catch (e) {
+    logger.warn(`[Huitian-daily] 60s API 失败，改用静态图镜像: ${e.message}`)
+  }
+  if (!date) date = new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10) // CST 今天
+  const url = await firstAliveUrl(static60sUrls(date))
+  if (!url) throw new Error(`60s API 与静态图镜像均不可用 (${date})`)
   return segment.image(url)
 }
 
